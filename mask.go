@@ -1,4 +1,4 @@
-package go_json_mask
+package jsonmask
 
 import (
 	"encoding/json"
