@@ -28,13 +28,8 @@ type MaskConfig struct {
 	SkipFields []string
 }
 
-// Mask masks the given json string
-func Mask(jsonString string) (string, error) {
-	return MaskWithConfig(jsonString)
-}
-
-// MaskWithConfig masks the given json string with config
-func MaskWithConfig(jsonString string, config ...*MaskConfig) (string, error) {
+// Mask masks the given json string with config
+func Mask(jsonString string, config ...*MaskConfig) (string, error) {
 
 	before := make(map[string]interface{})
 
