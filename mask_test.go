@@ -5,6 +5,11 @@ import (
 )
 
 const (
+	simpleJSONString = `
+{
+  "string": "挨拶はHello World"
+}
+`
 	genericJSONString = `
 {
   "array": [
@@ -39,10 +44,10 @@ const (
 `
 )
 
-func TestMaskWithFunc(t *testing.T) {
+func TestMask(t *testing.T) {
 	type args struct {
 		jsonString string
-		maskFunc   func(s string) string
+		config     *MaskConfig
 	}
 	tests := []struct {
 		name    string
@@ -51,44 +56,87 @@ func TestMaskWithFunc(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "SUCCESS: Generic json string with default mask function",
+			name: "SUCCESS: simple json string",
 			args: args{
-				jsonString: genericJSONString,
-				maskFunc:   defaultMaskFunc,
+				jsonString: simpleJSONString,
 			},
-			want:    `{"array":[2,3,1],"boolean":true,"color":"#******","null":null,"number":123,"object":{"a":"b","c":"d","e":"f"},"string":"挨*******************"}`,
+			want:    `{"string":"挨*******************"}`,
 			wantErr: false,
 		},
 		{
-			name: "SUCCESS: Generic json string with custom mask function",
+			name: "SUCCESS: simple json string with config: custom callback",
 			args: args{
-				jsonString: genericJSONString,
-				maskFunc: func(s string) string {
-					return string([]rune(s)[:1]) + "***"
+				jsonString: simpleJSONString,
+				config: &MaskConfig{
+					Callback: func(s string) string {
+						return string([]rune(s)[:1]) + "$$$"
+					},
 				},
 			},
-			want:    `{"array":[1,2,3],"boolean":true,"color":"#***","null":null,"number":123,"object":{"a":"b***","c":"d***","e":"f***"},"string":"挨***"}`,
+			want:    `{"string":"挨$$$"}`,
 			wantErr: false,
 		},
 		{
-			name: "SUCCESS: Nested object json string with default mask function",
+			name: "SUCCESS: simple json string with config: skip fields",
 			args: args{
-				jsonString: nestedObjectJSONString,
-				maskFunc:   defaultMaskFunc,
+				jsonString: simpleJSONString,
+				config: &MaskConfig{
+					SkipFields: []string{"string"},
+				},
 			},
-			want:    `{"object":{"a":{"b":{"c":{"d":"*"}}}}}`,
+			want:    `{"string":"挨拶はHello World"}`,
 			wantErr: false,
 		},
+
+		// TODO: how to compare map[string]interface{} ?
+
+		//{
+		//	name: "SUCCESS: Generic json string with default mask function",
+		//	args: args{
+		//		jsonString: genericJSONString,
+		//		config:     defaultMaskConfig,
+		//	},
+		//	want:    `{"array":[2,3,1],"boolean":true,"color":"#******","null":null,"number":123,"object":{"a":"b","c":"d","e":"f"},"string":"挨*******************"}`,
+		//	wantErr: false,
+		//},
+		//{
+		//	name: "SUCCESS: Generic json string with custom mask function",
+		//	args: args{
+		//		jsonString: genericJSONString,
+		//		config: &MaskConfig{
+		//			Callback: func(s string) string {
+		//				return string([]rune(s)[:1]) + "$$$"
+		//			},
+		//		},
+		//	},
+		//	want:    `{"array":[1,2,3],"boolean":true,"color":"#***","null":null,"number":123,"object":{"a":"b***","c":"d***","e":"f***"},"string":"挨***"}`,
+		//	wantErr: false,
+		//},
+		//{
+		//	name: "SUCCESS: Nested object json string with default mask function",
+		//	args: args{
+		//		jsonString: nestedObjectJSONString,
+		//		config:     defaultMaskConfig,
+		//	},
+		//	want:    `{"object":{"a":{"b":{"c":{"d":"*"}}}}}`,
+		//	wantErr: false,
+		//},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := MaskWithFunc(tt.args.jsonString, tt.args.maskFunc)
+			var got string
+			var err error
+			if tt.args.config == nil {
+				got, err = Mask(tt.args.jsonString)
+			} else {
+				got, err = Mask(tt.args.jsonString, tt.args.config)
+			}
 			if (err != nil) != tt.wantErr {
-				t.Errorf("MaskWithFunc() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("Mask() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if got != tt.want {
-				t.Errorf("MaskWithFunc() = %v, want %v", got, tt.want)
+				t.Errorf("Mask() = %v, want %v", got, tt.want)
 			}
 		})
 	}
