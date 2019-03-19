@@ -21,21 +21,28 @@ var (
 )
 
 // Mask masks the given json string
-func Mask(jsonString string) (string, error) {
-	return MaskWithFunc(jsonString, defaultMaskFunc)
+func Mask(jsonString string, skipFields []string) (string, error) {
+	return MaskWithFunc(jsonString, defaultMaskFunc, skipFields)
 }
 
 // MaskWithFunc masks the given json string using the given callback function
-func MaskWithFunc(jsonString string, maskFunc func(s string) string) (string, error) {
+func MaskWithFunc(jsonString string, maskFunc func(s string) string, skipFields []string) (string, error) {
 
 	before := make(map[string]interface{})
-	after := make(map[string]interface{})
 
 	if err := json.Unmarshal([]byte(jsonString), &before); err != nil {
 		return "", err
 	}
 
-	mask(before, after, maskFunc)
+	skipFieldMap := make(map[string]bool, len(skipFields))
+	for _, skipField := range skipFields {
+		skipFieldMap[skipField] = true
+	}
+
+	after := make(map[string]interface{})
+	for k, v := range before {
+		mask(k, v, after, maskFunc, skipFieldMap)
+	}
 
 	b, err := json.Marshal(after)
 	if err != nil {
@@ -45,20 +52,14 @@ func MaskWithFunc(jsonString string, maskFunc func(s string) string) (string, er
 	return string(b), nil
 }
 
-func mask(before, after map[string]interface{}, callback func(s string) string) {
-	for k, v := range before {
-		recursiveMask(k, v, after, callback)
-	}
-}
-
-func recursiveMask(key string, val interface{}, obj map[string]interface{}, callback func(s string) string) {
+func mask(key string, val interface{}, obj map[string]interface{}, callback func(s string) string, skipFieldMap map[string]bool) {
 
 	switch value := val.(type) {
 
 	case map[string]interface{}:
 		ret := make(map[string]interface{})
 		for k, v := range value {
-			recursiveMask(k, v, ret, callback)
+			mask(k, v, ret, callback, skipFieldMap)
 		}
 		obj[key] = ret
 
@@ -66,7 +67,7 @@ func recursiveMask(key string, val interface{}, obj map[string]interface{}, call
 		ret := make(map[string]interface{})
 		for k, v := range value {
 			i := strconv.Itoa(k)
-			recursiveMask(i, v, ret, callback)
+			mask(i, v, ret, callback, skipFieldMap)
 		}
 		slice := make([]interface{}, 0)
 		for _, v := range ret {
@@ -75,8 +76,13 @@ func recursiveMask(key string, val interface{}, obj map[string]interface{}, call
 		obj[key] = slice
 
 	case string:
-		// mask the string value
-		obj[key] = callback(value)
+		if _, doSkip := skipFieldMap[key]; doSkip {
+			// skip masking
+			obj[key] = value
+		} else {
+			// mask the string value
+			obj[key] = callback(value)
+		}
 
 	default:
 		obj[key] = val
