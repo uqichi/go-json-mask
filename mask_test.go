@@ -56,7 +56,7 @@ func TestMaskWithFunc(t *testing.T) {
 				jsonString: genericJSONString,
 				maskFunc:   defaultMaskFunc,
 			},
-			want:    `{"array":[1,2,3],"boolean":true,"color":"*******","null":null,"number":123,"object":{"a":"*","c":"*","e":"*"},"string":"********************"}`,
+			want:    `{"array":[2,3,1],"boolean":true,"color":"#******","null":null,"number":123,"object":{"a":"b","c":"d","e":"f"},"string":"挨*******************"}`,
 			wantErr: false,
 		},
 		{
