@@ -41,6 +41,9 @@ func Mask(jsonString string, config ...*MaskConfig) (string, error) {
 	if len(config) > 0 {
 		cfg = config[0]
 	}
+	if cfg.Callback == nil {
+		cfg.Callback = defaultMaskFunc
+	}
 
 	skipFieldMap := make(map[string]bool, len(cfg.SkipFields))
 	for _, skipField := range cfg.SkipFields {
