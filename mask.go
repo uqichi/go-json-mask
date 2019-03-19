@@ -14,10 +14,10 @@ var (
 
 	// MaskWithoutFirstOneCharFunc is function which masks the string except the first character
 	MaskWithoutFirstOneCharFunc = func(s string) string {
-		return string([]rune(s)[:1]) + "*****"
+		return string([]rune(s)[:1]) + strings.Repeat("*", len(s)-1)
 	}
 
-	defaultMaskFunc = MaskFunc
+	defaultMaskFunc = MaskWithoutFirstOneCharFunc
 )
 
 // Mask masks the given json string
