@@ -7,8 +7,8 @@ import (
 )
 
 var (
-	// MaskFunc is function which masks the string with its length same
-	MaskFunc = func(s string) string {
+	// MaskAllFunc is function which masks the whole string
+	MaskAllFunc = func(s string) string {
 		return strings.Repeat("*", len(s))
 	}
 
@@ -17,16 +17,24 @@ var (
 		return string([]rune(s)[:1]) + strings.Repeat("*", len(s)-1)
 	}
 
-	defaultMaskFunc = MaskWithoutFirstOneCharFunc
+	defaultMaskFunc   = MaskWithoutFirstOneCharFunc
+	defaultMaskConfig = &MaskConfig{
+		Callback: defaultMaskFunc,
+	}
 )
 
-// Mask masks the given json string
-func Mask(jsonString string, skipFields []string) (string, error) {
-	return MaskWithFunc(jsonString, defaultMaskFunc, skipFields)
+type MaskConfig struct {
+	Callback   func(s string) string
+	SkipFields []string
 }
 
-// MaskWithFunc masks the given json string using the given callback function
-func MaskWithFunc(jsonString string, maskFunc func(s string) string, skipFields []string) (string, error) {
+// Mask masks the given json string
+func Mask(jsonString string) (string, error) {
+	return MaskWithConfig(jsonString)
+}
+
+// MaskWithConfig masks the given json string with config
+func MaskWithConfig(jsonString string, config ...*MaskConfig) (string, error) {
 
 	before := make(map[string]interface{})
 
@@ -34,14 +42,19 @@ func MaskWithFunc(jsonString string, maskFunc func(s string) string, skipFields 
 		return "", err
 	}
 
-	skipFieldMap := make(map[string]bool, len(skipFields))
-	for _, skipField := range skipFields {
+	cfg := defaultMaskConfig
+	if len(config) > 0 {
+		cfg = config[0]
+	}
+
+	skipFieldMap := make(map[string]bool, len(cfg.SkipFields))
+	for _, skipField := range cfg.SkipFields {
 		skipFieldMap[skipField] = true
 	}
 
 	after := make(map[string]interface{})
 	for k, v := range before {
-		mask(k, v, after, maskFunc, skipFieldMap)
+		mask(k, v, after, cfg.Callback, skipFieldMap)
 	}
 
 	b, err := json.Marshal(after)
@@ -77,10 +90,10 @@ func mask(key string, val interface{}, obj map[string]interface{}, callback func
 
 	case string:
 		if _, doSkip := skipFieldMap[key]; doSkip {
-			// skip masking
+			// skip masking and set the original value
 			obj[key] = value
 		} else {
-			// mask the string value
+			// mask and set the modified value
 			obj[key] = callback(value)
 		}
 

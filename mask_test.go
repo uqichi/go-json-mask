@@ -39,10 +39,10 @@ const (
 `
 )
 
-func TestMaskWithFunc(t *testing.T) {
+func TestMaskWithConfig(t *testing.T) {
 	type args struct {
 		jsonString string
-		maskFunc   func(s string) string
+		config     *MaskConfig
 	}
 	tests := []struct {
 		name    string
@@ -54,7 +54,7 @@ func TestMaskWithFunc(t *testing.T) {
 			name: "SUCCESS: Generic json string with default mask function",
 			args: args{
 				jsonString: genericJSONString,
-				maskFunc:   defaultMaskFunc,
+				config:     defaultMaskConfig,
 			},
 			want:    `{"array":[2,3,1],"boolean":true,"color":"#******","null":null,"number":123,"object":{"a":"b","c":"d","e":"f"},"string":"挨*******************"}`,
 			wantErr: false,
@@ -63,8 +63,10 @@ func TestMaskWithFunc(t *testing.T) {
 			name: "SUCCESS: Generic json string with custom mask function",
 			args: args{
 				jsonString: genericJSONString,
-				maskFunc: func(s string) string {
-					return string([]rune(s)[:1]) + "***"
+				config: &MaskConfig{
+					Callback: func(s string) string {
+						return string([]rune(s)[:1]) + "$$$"
+					},
 				},
 			},
 			want:    `{"array":[1,2,3],"boolean":true,"color":"#***","null":null,"number":123,"object":{"a":"b***","c":"d***","e":"f***"},"string":"挨***"}`,
@@ -74,7 +76,7 @@ func TestMaskWithFunc(t *testing.T) {
 			name: "SUCCESS: Nested object json string with default mask function",
 			args: args{
 				jsonString: nestedObjectJSONString,
-				maskFunc:   defaultMaskFunc,
+				config:     defaultMaskConfig,
 			},
 			want:    `{"object":{"a":{"b":{"c":{"d":"*"}}}}}`,
 			wantErr: false,
@@ -82,13 +84,13 @@ func TestMaskWithFunc(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := MaskWithFunc(tt.args.jsonString, tt.args.maskFunc, []string{"string"})
+			got, err := MaskWithConfig(tt.args.jsonString, tt.args.config)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("MaskWithFunc() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("MaskWithConfig() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if got != tt.want {
-				t.Errorf("MaskWithFunc() = %v, want %v", got, tt.want)
+				t.Errorf("MaskWithConfig() = %v, want %v", got, tt.want)
 			}
 		})
 	}
