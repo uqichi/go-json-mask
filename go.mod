@@ -1,3 +1,3 @@
 module github.com/uqichi/go-json-mask
 
-go 1.12
+go 1.11
