@@ -13,8 +13,6 @@ const (
 	genericJSONString = `
 {
   "array": [
-    1,
-    2,
     3
   ],
   "boolean": true,
@@ -88,39 +86,39 @@ func TestMask(t *testing.T) {
 			wantErr: false,
 		},
 
-		// TODO: how to compare map[string]interface{} ?
-
-		//{
-		//	name: "SUCCESS: Generic json string with default mask function",
-		//	args: args{
-		//		jsonString: genericJSONString,
-		//		config:     defaultMaskConfig,
-		//	},
-		//	want:    `{"array":[2,3,1],"boolean":true,"color":"#******","null":null,"number":123,"object":{"a":"b","c":"d","e":"f"},"string":"挨*******************"}`,
-		//	wantErr: false,
-		//},
-		//{
-		//	name: "SUCCESS: Generic json string with custom mask function",
-		//	args: args{
-		//		jsonString: genericJSONString,
-		//		config: &MaskConfig{
-		//			Callback: func(s string) string {
-		//				return string([]rune(s)[:1]) + "$$$"
-		//			},
-		//		},
-		//	},
-		//	want:    `{"array":[1,2,3],"boolean":true,"color":"#***","null":null,"number":123,"object":{"a":"b***","c":"d***","e":"f***"},"string":"挨***"}`,
-		//	wantErr: false,
-		//},
-		//{
-		//	name: "SUCCESS: Nested object json string with default mask function",
-		//	args: args{
-		//		jsonString: nestedObjectJSONString,
-		//		config:     defaultMaskConfig,
-		//	},
-		//	want:    `{"object":{"a":{"b":{"c":{"d":"*"}}}}}`,
-		//	wantErr: false,
-		//},
+		{
+			name: "SUCCESS: Generic json string with default mask function",
+			args: args{
+				jsonString: genericJSONString,
+				config:     defaultMaskConfig,
+			},
+			want:    `{"array":[3],"boolean":true,"color":"#******","null":null,"number":123,"object":{"a":"b","c":"d","e":"f"},"string":"挨*******************"}`,
+			wantErr: false,
+		},
+		{
+			name: "SUCCESS: Generic json string with config",
+			args: args{
+				jsonString: genericJSONString,
+				config: &MaskConfig{
+					Callback: func(s string) string {
+						return string([]rune(s)[:1]) + "$$$"
+					},
+					SkipFields: []string{"color"},
+				},
+			},
+			want:    `{"array":[3],"boolean":true,"color":"#82b92c","null":null,"number":123,"object":{"a":"b$$$","c":"d$$$","e":"f$$$"},"string":"挨$$$"}`,
+			wantErr: false,
+		},
+		{
+			// TODO: future task
+			name: "SUCCESS: Nested object json string is not masked",
+			args: args{
+				jsonString: nestedObjectJSONString,
+				config:     defaultMaskConfig,
+			},
+			want:    `{"object":{"a":{"b":{"c":{"d":"e"}}}}}`,
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

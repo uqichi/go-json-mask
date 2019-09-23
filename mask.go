@@ -12,12 +12,12 @@ var (
 		return strings.Repeat("*", len(s))
 	}
 
-	// MaskWithoutFirstOneCharFunc is function which masks the string except the first character
-	MaskWithoutFirstOneCharFunc = func(s string) string {
+	// MaskWithoutFirstCharFunc is function which masks the string except the first character
+	MaskWithoutFirstCharFunc = func(s string) string {
 		return string([]rune(s)[:1]) + strings.Repeat("*", len(s)-1)
 	}
 
-	defaultMaskFunc   = MaskWithoutFirstOneCharFunc
+	defaultMaskFunc   = MaskWithoutFirstCharFunc
 	defaultMaskConfig = &MaskConfig{
 		Callback: defaultMaskFunc,
 	}
